@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A three-day life simulation NPC relationship system design demo.">
+  <title>NPC 好感度 Demo</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='.9em' font-size='56'%3E%E2%99%A5%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./css/style.css?v=6">
+  <link rel="stylesheet" href="./css/day3.css?v=6">
+  <link rel="stylesheet" href="./css/dialogue.css?v=6">
+  <link rel="stylesheet" href="./css/day4.css?v=6">
+  <link rel="stylesheet" href="./css/day5.css?v=6">
+</head>
+<body>
+  <main class="game-shell">
+    <header class="game-hud" aria-label="游戏状态">
+      <div class="hud-time"><span class="sun" aria-hidden="true">☀</span><strong id="day-display">Day 1</strong><span class="divider"></span><strong id="time-display">08:00</strong><span id="period-badge" class="period-badge">上午</span></div>
+      <div class="game-title" aria-label="暖溪镇"><span>暖溪镇</span><small>WARM CREEK</small></div>
+      <div class="hud-location"><span aria-hidden="true">●</span><small id="daily-hint">当前：上午</small><strong id="location-display">小镇地图</strong></div>
+    </header>
+
+    <section class="game-stage" aria-label="游戏主场景">
+      <div class="map-view" id="map-view">
+        <div class="map-heading"><span>小镇地图</span><small>选择地点前往</small></div>
+        <div class="river"><i></i><i></i><i></i></div>
+        <div class="road road-horizontal"></div><div class="road road-vertical"></div>
+        <div class="bridge"></div><div class="plaza-ground"></div>
+        <div class="decorations" aria-hidden="true">
+          <span class="tree t1">♣</span><span class="tree t2">♣</span><span class="tree t3">♣</span><span class="tree t4">♣</span><span class="tree t5">♣</span>
+          <span class="flower f1">✿</span><span class="flower f2">✿</span><span class="flower f3">✿</span><span class="bench">═</span>
+        </div>
+        <div id="location-list" class="location-list"></div>
+      </div>
+
+      <article class="scene-view" id="scene-view" aria-live="polite" hidden>
+        <button type="button" id="back-to-map" class="back-button"><span aria-hidden="true">‹</span> 返回小镇地图</button>
+        <div class="scene-sky"><span class="scene-sun">☀</span><span class="cloud c1"></span><span class="cloud c2"></span></div>
+        <div class="scene-landmark" id="scene-landmark" aria-hidden="true"></div>
+        <div class="npc-figures" id="npc-figures"></div>
+        <div class="scene-caption">
+          <p>你来到了</p><h1 id="scene-title">住宅</h1><p id="scene-description"></p>
+          <div id="npc-status" class="npc-status"></div>
+          <div id="interaction-target" class="interaction-target"></div>
+          <div id="scene-actions" class="scene-actions" hidden>
+            <button type="button" id="talk-button"><span aria-hidden="true">💬</span> 对话</button>
+            <button type="button" id="gift-button"><span aria-hidden="true">🎁</span> 送礼</button>
+          </div>
+          <button type="button" id="event-entry" class="event-entry" hidden>✦ 和 Emma 聊聊</button>
+          <div id="item-actions" class="item-actions"></div>
+        </div>
+      </article>
+
+      <aside class="villager-hud" aria-labelledby="relations-heading">
+        <div class="villager-heading"><span id="relations-heading">镇民</span><small>VILLAGERS</small></div>
+        <div id="relation-list" class="relation-list"></div>
+      </aside>
+      <button type="button" id="inventory-button" class="inventory-button">🎒 随身物品 <span id="inventory-count">0</span></button>
+
+      <div class="status-toast" id="status-hint" aria-live="polite">清晨的小镇刚刚醒来。</div>
+
+      <footer class="time-hud" aria-label="时间控制">
+        <span class="clock" aria-hidden="true">◷</span>
+        <div><small id="time-message">时间流逝</small><strong>等待时间</strong></div>
+        <button type="button" id="wait-button">等待…</button>
+        <button type="button" id="end-day-button" class="end-day-button" hidden>结束今天</button>
+      </footer>
+    </section>
+    <div class="modal-layer" id="dialogue-modal" hidden><section class="game-modal dialogue-modal" role="dialog" aria-modal="true" aria-labelledby="dialogue-name"><div class="modal-portrait" id="dialogue-avatar" aria-hidden="true">E</div><div class="dialogue-content"><p class="speaker" id="dialogue-name">Emma</p><p class="dialogue-line" id="dialogue-line"></p><div id="dialogue-choices" class="dialogue-choices"></div><div class="affection-feedback" id="dialogue-feedback"></div><button type="button" id="dialogue-continue" class="continue-button" data-close-modal="dialogue-modal">继续 <span aria-hidden="true">›</span></button></div></section></div>
+    <div class="modal-layer" id="gift-modal" hidden><section class="game-modal gift-modal" role="dialog" aria-modal="true" aria-labelledby="gift-title"><button type="button" class="modal-close" data-close-modal="gift-modal" aria-label="关闭">×</button><p class="modal-kicker">送出一份心意</p><h2 id="gift-title">选择礼物</h2><p id="gift-recipient"></p><div class="gift-options" id="gift-options"></div><p class="gift-message" id="gift-message"></p></section></div>
+    <div class="modal-layer" id="relationship-modal" hidden><section class="game-modal relationship-modal" role="dialog" aria-modal="true" aria-labelledby="relationship-title"><div class="upgrade-rays" aria-hidden="true">✦</div><p class="modal-kicker">新的羁绊</p><h2 id="relationship-title">关系提升</h2><div class="upgrade-portrait" id="upgrade-avatar">E</div><p id="relationship-message"></p><button type="button" class="continue-button" data-close-modal="relationship-modal">太好了</button></section></div>
+    <div class="modal-layer" id="clue-modal" hidden><section class="game-modal clue-modal" role="dialog" aria-modal="true" aria-labelledby="clue-title"><p class="modal-kicker">更了解彼此</p><h2 id="clue-title">新生活线索已解锁</h2><div class="clue-icon">⌂</div><div id="clue-content" class="clue-content"></div><button type="button" class="continue-button" data-close-modal="clue-modal">记住了</button></section></div>
+    <div class="modal-layer" id="villager-modal" hidden><section class="game-modal villager-modal" role="dialog" aria-modal="true" aria-labelledby="villager-detail-name"><button type="button" class="modal-close" data-close-modal="villager-modal" aria-label="关闭">×</button><div class="detail-head"><div id="villager-detail-avatar" class="upgrade-portrait">E</div><div><p class="modal-kicker">镇民手册</p><h2 id="villager-detail-name">Emma</h2><p id="villager-detail-stats"></p></div></div><h3>已知生活规律</h3><div id="villager-detail-clue" class="detail-clue"></div></section></div>
+    <div class="modal-layer event-layer" id="event-modal" hidden><section class="game-modal dialogue-modal event-modal" role="dialog" aria-modal="true" aria-labelledby="event-speaker"><div class="modal-portrait emma" id="event-avatar">E</div><div class="dialogue-content"><p class="event-label" id="event-label">关系事件 · 广场小憩</p><p class="speaker" id="event-speaker">Emma</p><p class="dialogue-line" id="event-line"></p><div id="event-choices" class="event-choices"></div><button type="button" id="event-continue" class="continue-button">继续 ›</button></div></section></div>
+    <div class="day-transition" id="day-transition" hidden><span id="transition-day">Day 2</span><small>新的一天开始了。</small></div>
+    <div class="modal-layer" id="inventory-modal" hidden><section class="game-modal inventory-modal" role="dialog" aria-modal="true" aria-labelledby="inventory-title"><button type="button" class="modal-close" data-close-modal="inventory-modal" aria-label="关闭">×</button><p class="modal-kicker">今日获得物品</p><h2 id="inventory-title">随身物品</h2><div id="inventory-list" class="inventory-list"></div></section></div>
+    <div class="modal-layer" id="wait-modal" hidden><section class="game-modal wait-modal" role="dialog" aria-modal="true" aria-labelledby="wait-title"><button type="button" class="modal-close" data-close-modal="wait-modal" aria-label="关闭">×</button><p class="modal-kicker">让时间快一点</p><h2 id="wait-title">等待至……</h2><div class="wait-options"><button data-wait="720">中午 12:00</button><button data-wait="1080">下午 18:00</button><button data-wait="1200">晚上 20:00</button><button data-wait="60">等待 1 小时</button></div></section></div>
+    <div class="modal-layer" id="item-modal" hidden><section class="game-modal item-modal" role="dialog" aria-modal="true" aria-labelledby="item-title"><div id="item-icon" class="item-icon">☕</div><h2 id="item-title">获得物品</h2><p id="item-message"></p><div id="item-choice" class="item-choice"></div><button type="button" id="item-confirm" class="continue-button" data-close-modal="item-modal">收下了</button></section></div>
+    <div class="modal-layer" id="time-guide"><section class="game-modal guide-modal" role="dialog" aria-modal="true" aria-labelledby="guide-title"><p class="modal-kicker">欢迎来到暖溪镇</p><h2 id="guide-title">时间会自然流逝</h2><p>不同时间，镇民会前往不同地点。想快速找到某个人，也可以使用右下角的“等待”。</p><button type="button" class="continue-button" data-close-modal="time-guide">知道了</button></section></div>
+    <div class="ending-layer" id="ending-screen" hidden><section class="ending-card"><p class="modal-kicker">暖溪镇 · 三日记录</p><h1>三天过去了</h1><p>短短三天里，你逐渐看见了镇民们不同的生活节奏。</p><div id="ending-results" class="ending-results"></div><button type="button" id="restart-button" class="continue-button">重新开始</button></section></div>
+    <div class="floating-heart" id="floating-heart" aria-live="polite"></div>
+  </main>
+  <script src="./js/rules.js?v=6"></script>
+  <script src="./js/data.js?v=6"></script>
+  <script src="./js/dialogues-v2.js?v=6"></script>
+  <script src="./js/game.js?v=6"></script>
+</body>
+</html>
+
